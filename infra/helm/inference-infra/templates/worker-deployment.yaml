@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: inference
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      serviceAccountName: worker
+      containers:
+        - name: worker
+          image: "{{ .Values.worker.image }}:{{ .Values.worker.tag }}"
+          env:
+            - name: SQS_QUEUE_URL
+              value: {{ .Values.aws.sqsQueueUrl | quote }}
+            - name: S3_INPUT_BUCKET
+              value: {{ .Values.aws.s3InputBucket | quote }}
+            - name: S3_OUTPUT_BUCKET
+              value: {{ .Values.aws.s3OutputBucket | quote }}
+            - name: TRITON_ADDRESS
+              value: {{ .Values.worker.env.tritonAddress | quote }}
+            - name: VLLM_ADDRESS
+              value: {{ .Values.worker.env.vllmAddress | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.aws.region | quote }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          volumeMounts:
+            - name: workdir
+              mountPath: /tmp/worker
+      volumes:
+        - name: workdir
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: worker
+  namespace: inference
+  annotations:
+    eks.amazonaws.com/role-arn: {{ .Values.aws.workerRoleArn | quote }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-hpa
+  namespace: inference
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  minReplicas: {{ .Values.worker.minReplicas }}
+  maxReplicas: {{ .Values.worker.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

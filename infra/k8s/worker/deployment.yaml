@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: inference
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      serviceAccountName: worker
+      containers:
+        - name: worker
+          image: inference-infra/worker:latest
+          env:
+            - name: SQS_QUEUE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: worker-secrets
+                  key: sqs-queue-url
+            - name: S3_INPUT_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: worker-config
+                  key: s3-input-bucket
+            - name: S3_OUTPUT_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: worker-config
+                  key: s3-output-bucket
+            - name: TRITON_ADDRESS
+              value: "triton-service.triton.svc.cluster.local:8001"
+            - name: VLLM_ADDRESS
+              value: "vllm-service.vllm.svc.cluster.local:8000"
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: WORK_DIR
+              value: "/tmp/worker"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          volumeMounts:
+            - name: workdir
+              mountPath: /tmp/worker
+      volumes:
+        - name: workdir
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config
+  namespace: inference
+data:
+  s3-input-bucket: "my-audio-input"
+  s3-output-bucket: "my-audio-output"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: worker
+  namespace: inference
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/worker-role

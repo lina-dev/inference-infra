@@ -1,0 +1,6 @@
+apiVersion: v2
+name: inference-infra
+description: S3 audio transcription and summarization pipeline
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

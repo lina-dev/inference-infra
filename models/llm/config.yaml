@@ -1,0 +1,5 @@
+model: mistralai/Mistral-7B-Instruct-v0.3
+dtype: bfloat16
+max_model_len: 8192
+gpu_memory_utilization: 0.90
+served_model_name: default

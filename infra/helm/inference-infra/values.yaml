@@ -1,0 +1,50 @@
+worker:
+  image: inference-infra/worker
+  tag: latest
+  replicas: 2
+  minReplicas: 1
+  maxReplicas: 20
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  env:
+    awsRegion: us-east-1
+    tritonAddress: triton-service.triton.svc.cluster.local:8001
+    vllmAddress: vllm-service.vllm.svc.cluster.local:8000
+
+scheduler:
+  image: inference-infra/scheduler
+  tag: latest
+  scaleUpThreshold: 5
+  scaleDownThreshold: 0
+  minReplicas: 1
+  maxReplicas: 20
+
+triton:
+  image: nvcr.io/nvidia/tritonserver
+  tag: 24.01-py3
+  replicas: 1
+  minReplicas: 1
+  maxReplicas: 5
+  gpu: 1
+  modelStorageSize: 50Gi
+
+vllm:
+  image: vllm/vllm-openai
+  tag: latest
+  replicas: 1
+  gpu: 1
+  modelStorageSize: 100Gi
+  maxModelLen: 8192
+
+aws:
+  region: us-east-1
+  sqsQueueUrl: ""
+  s3InputBucket: ""
+  s3OutputBucket: ""
+  workerRoleArn: ""
+  schedulerRoleArn: ""

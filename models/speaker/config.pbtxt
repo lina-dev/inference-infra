@@ -1,0 +1,27 @@
+name: "speaker-diarization"
+backend: "python"
+max_batch_size: 0
+
+input [
+  {
+    name: "audio_bytes"
+    data_type: TYPE_BYTES
+    dims: [ 1 ]
+  }
+]
+
+output [
+  {
+    name: "diarization"
+    data_type: TYPE_BYTES
+    dims: [ 1 ]
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
