@@ -15,7 +15,10 @@ spec:
     spec:
       containers:
         - name: triton
-          image: nvcr.io/nvidia/tritonserver:24.01-py3
+          # Custom image with the whisper model repository baked in
+          # (built from models/asr/Dockerfile). New pods load the model on
+          # startup with no external model store.
+          image: inference-infra/triton-whisper:latest
           args:
             - tritonserver
             - --model-repository=/models
@@ -36,19 +39,12 @@ spec:
               nvidia.com/gpu: "1"
               cpu: "2"
               memory: "8Gi"
-          volumeMounts:
-            - name: model-store
-              mountPath: /models
           readinessProbe:
             httpGet:
               path: /v2/health/ready
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 10
-      volumes:
-        - name: model-store
-          persistentVolumeClaim:
-            claimName: triton-model-store
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
@@ -89,16 +85,3 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: triton-model-store
-  namespace: triton
-spec:
-  accessModes:
-    - ReadOnlyMany
-  resources:
-    requests:
-      storage: 50Gi
-  storageClassName: efs-sc

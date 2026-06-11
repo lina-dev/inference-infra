@@ -7,11 +7,13 @@ build:
 	docker build -t $(REGISTRY)/worker:$(TAG) services/worker-go
 	docker build -t $(REGISTRY)/scheduler:$(TAG) services/scheduler-go
 	docker build -t $(REGISTRY)/api:$(TAG) services/api
+	docker build -t $(REGISTRY)/triton-whisper:$(TAG) models/asr
 
 push:
 	docker push $(REGISTRY)/worker:$(TAG)
 	docker push $(REGISTRY)/scheduler:$(TAG)
 	docker push $(REGISTRY)/api:$(TAG)
+	docker push $(REGISTRY)/triton-whisper:$(TAG)
 
 lint:
 	cd services/worker-go    && go vet ./... && golangci-lint run

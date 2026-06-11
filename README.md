@@ -6,7 +6,7 @@ Audio transcription and summarization pipeline running on Kubernetes.
 
 1. A job message arrives on an SQS queue with an S3 key pointing to an audio file.
 2. The **worker** downloads the file, runs it through ffmpeg (resample to 16 kHz mono `float32`), splits it into fixed-length chunks, and sends each chunk concurrently to **Triton Inference Server** over gRPC for Whisper transcription.
-3. Transcribed segments are reordered and merged into a timestamped transcript, then sent to **vLLM** for summarization.
+3. Transcribed segments are merged into a timestamped transcript, then sent to **vLLM** for summarization.
 4. The transcript and summary are uploaded as JSON back to S3.
 
 ## Services
